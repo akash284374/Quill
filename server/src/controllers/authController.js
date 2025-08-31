@@ -156,17 +156,85 @@ export const googleLogin = async (req, res) => {
 };
 
 // ---------------- GET LOGGED IN USER ----------------
+// export const getMe = async (req, res) => {
+//   try {
+//     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+//     if (!user) return res.status(404).json({ message: "User not found" });
+
+//     res.status(200).json({ user: sanitizeUser(user) });
+//   } catch (err) {
+//     console.error("getMe error:", err);
+//     res.status(500).json({ message: "Something went wrong. Please try again." });
+//   }
+// };
+
+
+// ---------------- GET LOGGED IN USER ----------------
 export const getMe = async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: {
+        posts: {
+          select: {
+            id: true,
+            title: true,
+            content: true,
+            image: true,
+            createdAt: true,
+          },
+        },
+        followers: {
+          select: {
+            follower: {
+              select: {
+                id: true,
+                username: true,
+                profileImage: true,
+              },
+            },
+          },
+        },
+        following: {
+          select: {
+            followee: {
+              select: {
+                id: true,
+                username: true,
+                profileImage: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    res.status(200).json({ user: sanitizeUser(user) });
+    // 🔹 Calculate "friends" (mutual followers)
+    const followersIds = user.followers.map(f => f.follower.id);
+    const followingIds = user.following.map(f => f.followee.id);
+    const friendIds = followersIds.filter(id => followingIds.includes(id));
+
+    const friends = user.followers
+      .filter(f => friendIds.includes(f.follower.id))
+      .map(f => f.follower);
+
+    // 🔹 Sanitize sensitive data
+    const { password, otp, otpExpiry, ...safeUser } = user;
+
+    res.status(200).json({
+      ...safeUser,
+      followers: user.followers.map(f => f.follower),
+      following: user.following.map(f => f.followee),
+      friends,
+    });
   } catch (err) {
     console.error("getMe error:", err);
     res.status(500).json({ message: "Something went wrong. Please try again." });
   }
 };
+
 
 // ---------------- LOGOUT ----------------
 export const logoutUser = (req, res) => {

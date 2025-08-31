@@ -1,6 +1,7 @@
+// src/services/authServices.js
 import api from "./api";
 
-// Verify OTP function
+// ✅ Verify OTP
 export const verifyOtp = async (email, otp) => {
   try {
     const res = await api.post(
@@ -8,45 +9,52 @@ export const verifyOtp = async (email, otp) => {
       { email, otp },
       { withCredentials: true }
     );
-    return { success: true, message: res.data.message, user: res.data.user || null };
+    return {
+      success: true,
+      message: res?.data?.message || "OTP verified",
+      user: res?.data?.user || null,
+    };
   } catch (error) {
     return {
       success: false,
-      message: error.response?.data?.message || "OTP verification failed",
+      message: error?.response?.data?.message || "OTP verification failed",
+      user: null,
     };
   }
 };
 
-// Register function
+// ✅ Register
 export const register = async (userData) => {
   try {
     const res = await api.post("/auth/register", userData, { withCredentials: true });
     return {
       success: true,
-      message: res.data.message,
-      user: res.data.user || null,
+      message: res?.data?.message || "Signup successful",
+      user: res?.data?.user || null,
     };
   } catch (error) {
     return {
       success: false,
-      message: error.response?.data?.message || "Signup failed",
+      message: error?.response?.data?.message || "Signup failed",
+      user: null,
     };
   }
 };
 
-// Login function
+// ✅ Login
 export const login = async (credentials) => {
   try {
     const res = await api.post("/auth/login", credentials, { withCredentials: true });
     return {
       success: true,
-      message: res.data.message,
-      user: res.data.user || null,
+      message: res?.data?.message || "Login successful",
+      user: res?.data?.user || null,
     };
   } catch (error) {
     return {
       success: false,
-      message: error.response?.data?.message || "Login failed",
+      message: error?.response?.data?.message || "Login failed",
+      user: null,
     };
   }
 };
@@ -54,15 +62,16 @@ export const login = async (credentials) => {
 // ✅ Check current session
 export const checkAuth = async () => {
   try {
-    const res = await api.get("/auth/me", { withCredentials: true }); // adjust endpoint to your backend
+    const res = await api.get("/auth/me", { withCredentials: true });
     return {
       success: true,
-      user: res.data.user || null,
+      user: res?.data?.user || null,
     };
   } catch (error) {
     return {
       success: false,
-      message: error.response?.data?.message || "Not authenticated",
+      message: error?.response?.data?.message || "Not authenticated",
+      user: null,
     };
   }
 };
@@ -70,19 +79,20 @@ export const checkAuth = async () => {
 // ✅ Logout
 export const logout = async () => {
   try {
-    await api.post("/auth/logout", {}, { withCredentials: true }); // adjust if backend uses GET
+    await api.post("/auth/logout", {}, { withCredentials: true });
     return { success: true };
   } catch (error) {
     return { success: false };
   }
 };
 
+// Export all services
 const authServices = {
   verifyOtp,
   register,
   login,
-  checkAuth, // ✅ added
-  logout,    // ✅ added
+  checkAuth,
+  logout,
 };
 
 export default authServices;

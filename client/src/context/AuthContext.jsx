@@ -7,34 +7,45 @@ export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate(); // 👈 needed for redirect
+  const [loading, setLoading] = useState(true); // true while checking auth
+  const navigate = useNavigate();
 
-  // ✅ Check auth status on first load
+  // ✅ Check auth on mount
   useEffect(() => {
-    const checkAuth = async () => {
+    const initializeAuth = async () => {
       try {
-        const data = await authServices.checkAuth();
-        if (data.success) {
-          setUser(data.user);
+        // Try to load user from localStorage first (optional)
+        const savedUser = localStorage.getItem("user");
+        if (savedUser) {
+          setUser(JSON.parse(savedUser));
         } else {
-          setUser(null);
+          // Otherwise, check session from backend
+          const data = await authServices.checkAuth();
+          if (data.success && data.user) {
+            setUser(data.user);
+            localStorage.setItem("user", JSON.stringify(data.user)); // cache user
+          } else {
+            setUser(null);
+          }
         }
       } catch (err) {
+        console.error("Auth check failed", err);
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
-    checkAuth();
+    initializeAuth();
   }, []);
 
+  // ✅ Login
   const login = async (credentials) => {
     try {
       const data = await authServices.login(credentials);
-      if (data.success) {
+      if (data.success && data.user) {
         setUser(data.user);
-        navigate("/"); // 🔥 redirect to Home after login
+        localStorage.setItem("user", JSON.stringify(data.user)); // cache user
+        navigate("/"); // redirect after login
       }
       return data;
     } catch (error) {
@@ -43,12 +54,14 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ✅ Signup
   const signup = async (userData) => {
     try {
       const data = await authServices.register(userData);
-      if (data.success) {
+      if (data.success && data.user) {
         setUser(data.user);
-        navigate("/"); // 🔥 redirect to Home after signup
+        localStorage.setItem("user", JSON.stringify(data.user)); // cache user
+        navigate("/"); // redirect after signup
       }
       return data;
     } catch (error) {
@@ -57,18 +70,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ✅ Verify OTP
   const verifyOtp = async (email, otp) => {
     return await authServices.verifyOtp(email, otp);
   };
 
+  // ✅ Logout
   const logout = async () => {
     try {
-      await authServices.logout(); // backend clears cookie
+      await authServices.logout();
     } catch (e) {
       console.error("Logout failed", e);
     } finally {
       setUser(null);
-      navigate("/login"); // 👈 send back to login page
+      localStorage.removeItem("user"); // clear cache
+      navigate("/login");
     }
   };
 
@@ -82,7 +98,7 @@ export const AuthProvider = ({ children }) => {
         verifyOtp,
         logout,
         setUser,
-        isAuthenticated: !!user, // 👈 easy flag for Sidebar
+        isAuthenticated: !!user,
       }}
     >
       {children}

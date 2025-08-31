@@ -1,3 +1,4 @@
+// src/routes/AppRoutes.jsx
 import { Routes, Route } from "react-router-dom";
 import Layout from "../components/Layout";
 import ProtectedRoute from "../components/ProtectedRoute";
@@ -19,77 +20,18 @@ import Login from "../pages/Login";
 const AppRoutes = ({ searchQuery, setSearchQuery }) => {
   return (
     <Routes>
-      {/* ✅ Pages with Navbar (and Sidebar only on Home) */}
       <Route element={<Layout searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}>
         <Route path="/" element={<Home searchQuery={searchQuery} />} />
-
-        <Route
-          path="/create"
-          element={
-            <ProtectedRoute>
-              <CreateFlow />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/search"
-          element={
-            <ProtectedRoute>
-              <SearchUser searchQuery={searchQuery} />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/:username"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/friends"
-          element={
-            <ProtectedRoute>
-              <Friends />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/feed"
-          element={
-            <ProtectedRoute>
-              <Feed searchQuery={searchQuery} />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/all-flows"
-          element={
-            <ProtectedRoute>
-              <AllFlows />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/create" element={<ProtectedRoute><CreateFlow /></ProtectedRoute>} />
+        <Route path="/search" element={<ProtectedRoute><SearchUser searchQuery={searchQuery} /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/feed" element={<ProtectedRoute><Feed searchQuery={searchQuery} /></ProtectedRoute>} />
+        <Route path="/all-flows" element={<ProtectedRoute><AllFlows /></ProtectedRoute>} />
       </Route>
 
-      {/* Public routes (no Navbar, no Sidebar) */}
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/logout" element={<Logout />} />
