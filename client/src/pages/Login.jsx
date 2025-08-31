@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import authServices from "../services/authServices"; // ✅ use authServices directly
+import { useAuth } from "../context/AuthContext"; // ✅ use context
 import toast from "react-hot-toast";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth(); // ✅ from context
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,11 +16,11 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const res = await authServices.login({ email, password });
+      const res = await login({ email, password }); // ✅ use context login
 
       if (res.success) {
         toast.success(res.message || "Login successful!");
-        navigate("/dashboard"); // redirect after login
+        navigate("/dashboard", { replace: true }); // ✅ replace avoids back nav to login
       } else {
         toast.error(res.message || "Login failed");
       }
@@ -32,7 +33,9 @@ const Login = () => {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4">
-      <h1 className="absolute top-6 left-6 text-2xl font-bold text-gray-800 dark:text-white">QUILL</h1>
+      <h1 className="absolute top-6 left-6 text-2xl font-bold text-gray-800 dark:text-white">
+        QUILL
+      </h1>
       <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8">
         <h2 className="text-3xl font-bold text-center text-gray-800 dark:text-white">
           Welcome Back 👋

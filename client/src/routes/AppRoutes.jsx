@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import Layout from "../components/Layout";
-import ProtectedRoute from "../components/ProtectedRoute"; // ✅ added
+import ProtectedRoute from "../components/ProtectedRoute";
 
 import Home from "../pages/Home";
 import CreateFlow from "../pages/CreateFlow";
@@ -13,17 +13,16 @@ import Logout from "../pages/Logout";
 import Feed from "../pages/Feed";
 import AllFlows from "../pages/AllFlows";
 import RegisterPage from "../pages/RegisterPage";
-import VerifyOtpPage from "../pages/VerifyOtpPage"; 
+import VerifyOtpPage from "../pages/VerifyOtpPage";
 import Login from "../pages/Login";
 
 const AppRoutes = ({ searchQuery, setSearchQuery }) => {
   return (
     <Routes>
-      {/* Routes with layout */}
+      {/* ✅ Pages with Navbar (and Sidebar only on Home) */}
       <Route element={<Layout searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}>
         <Route path="/" element={<Home searchQuery={searchQuery} />} />
 
-        {/* ✅ protected pages */}
         <Route
           path="/create"
           element={
@@ -90,7 +89,7 @@ const AppRoutes = ({ searchQuery, setSearchQuery }) => {
         />
       </Route>
 
-      {/* Routes without layout (public) */}
+      {/* Public routes (no Navbar, no Sidebar) */}
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/logout" element={<Logout />} />

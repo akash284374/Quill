@@ -1,16 +1,18 @@
 import { FaSun, FaMoon, FaSearch, FaUserCircle } from "react-icons/fa";
 import { useTheme } from "../context/ThemeContext";
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 const Navbar = ({ onSearch }) => {
   const { theme, toggleTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
+  const location = useLocation();
+  const isHome = location.pathname === "/";
 
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
 
-    // Call parent handler to filter posts by user name
     if (onSearch) {
       onSearch(value);
     }
@@ -18,8 +20,8 @@ const Navbar = ({ onSearch }) => {
 
   return (
     <nav className="flex items-center justify-between px-6 py-4 border-b dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white">
-      {/* Logo / Title */}
-      <h1 className="text-xl font-semibold">Welcome to Quill</h1>
+      {/* Left: Logo */}
+      <h1 className="text-xl font-semibold">Quill</h1>
 
       {/* Center: Search bar */}
       <div className="relative w-full max-w-md mx-6 hidden sm:block">
@@ -33,8 +35,18 @@ const Navbar = ({ onSearch }) => {
         <FaSearch className="absolute left-3 top-2.5 text-gray-500 dark:text-gray-400" />
       </div>
 
-      {/* Right side icons */}
+      {/* Right side: Home button + Icons */}
       <div className="flex items-center space-x-4">
+        {/* Show Back to Home only if not on Home */}
+        {!isHome && (
+          <Link
+            to="/"
+            className="px-4 py-2 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 transition"
+          >
+            Home
+          </Link>
+        )}
+
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}

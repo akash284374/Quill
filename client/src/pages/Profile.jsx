@@ -1,77 +1,82 @@
 // src/pages/Profile.jsx
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Profile = () => {
-  const { username } = useParams();
+  const { user } = useAuth();
 
-  // Dummy user data (you can replace with real API later)
-  const user = {
-    name: "Akash Kumar Sah",
-    bio: "Final year CSE (IoT) student | Passionate about building web apps",
-    location: "Kolkata, India",
-    joined: "January 2022",
-    followers: 245,
-    following: 180,
-    posts: [
-      { id: 1, content: "Just finished building my blog app!" },
-      { id: 2, content: "Exploring Prisma + PostgreSQL 🔥" },
-      { id: 3, content: "Learning system design concepts 📚" },
-    ],
-  };
+  if (!user) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <p className="text-gray-600 dark:text-gray-300">Loading profile...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col w-full min-h-screen bg-white dark:bg-[#0f0f0f] text-black dark:text-white">
+    <div className="min-h-screen bg-white dark:bg-[#0f0f0f] text-black dark:text-white">
       {/* Cover Image */}
-      <div className="relative w-full h-52 bg-gray-300 dark:bg-gray-800">
+      <div className="relative h-60 bg-gray-300 dark:bg-gray-800">
         <img
-          src="https://source.unsplash.com/random/1200x400?landscape"
+          src={user.coverPic || "https://source.unsplash.com/random/1200x400?landscape"}
           alt="cover"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover rounded-b-2xl"
         />
+
         {/* Profile Image */}
-        <div className="absolute left-6 -bottom-16 w-32 h-32 border-4 border-white dark:border-[#0f0f0f] rounded-full overflow-hidden">
-          <img
-            src="https://avatars.githubusercontent.com/u/99132893?v=4"
-            alt="profile"
-            className="w-full h-full object-cover"
-          />
+        <div className="absolute left-1/2 transform -translate-x-1/2 -bottom-16">
+          <div className="w-32 h-32 border-4 border-white dark:border-[#0f0f0f] rounded-full overflow-hidden shadow-lg">
+            <img
+              src={user.profilePic || "https://via.placeholder.com/150"}
+              alt="profile"
+              className="w-full h-full object-cover"
+            />
+          </div>
         </div>
       </div>
 
       {/* Profile Info */}
-      <div className="mt-20 px-6 md:px-10">
-        <h1 className="text-2xl font-bold">{user.name}</h1>
-        <p className="text-gray-600 dark:text-gray-300 text-sm">@{username}</p>
-        <p className="mt-3">{user.bio}</p>
+      <div className="mt-20 text-center px-6">
+        <h1 className="text-3xl font-bold">{user.username}</h1>
+        <p className="text-gray-600 dark:text-gray-400">{user.email}</p>
+        <p className="mt-3 text-lg">{user.bio || "No bio available"}</p>
 
-        <div className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-          <p>📍 {user.location}</p>
-          <p>📅 Joined {user.joined}</p>
-        </div>
-
-        <div className="mt-3 flex gap-4 text-sm font-medium">
-          <p>{user.followers} Followers</p>
-          <p>{user.following} Following</p>
+        <div className="mt-4 flex justify-center gap-8 text-sm font-medium">
+          <div>
+            <p className="text-xl font-bold">{user.followers?.length || 0}</p>
+            <p className="text-gray-500 dark:text-gray-400">Followers</p>
+          </div>
+          <div>
+            <p className="text-xl font-bold">{user.following?.length || 0}</p>
+            <p className="text-gray-500 dark:text-gray-400">Following</p>
+          </div>
+          <div>
+            <p className="text-xl font-bold">{user.friends?.length || 0}</p>
+            <p className="text-gray-500 dark:text-gray-400">Friends</p>
+          </div>
         </div>
       </div>
 
       {/* Divider */}
-      <div className="my-6 border-t border-gray-300 dark:border-gray-700" />
+      <div className="my-8 border-t border-gray-300 dark:border-gray-700" />
 
       {/* Posts */}
-      <div className="px-6 md:px-10">
-        <h2 className="text-xl font-semibold mb-4">Posts</h2>
-        <div className="space-y-4">
-          {user.posts.map((post) => (
-            <div
-              key={post.id}
-              className="p-4 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900"
-            >
-              {post.content}
-            </div>
-          ))}
-        </div>
+      <div className="px-6 md:px-20">
+        <h2 className="text-2xl font-semibold mb-6">Posts</h2>
+        {user.posts && user.posts.length > 0 ? (
+          <div className="space-y-6">
+            {user.posts.map((post, i) => (
+              <div
+                key={i}
+                className="p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 shadow-sm hover:shadow-md transition"
+              >
+                <p>{post.content}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-600 dark:text-gray-400">No posts yet.</p>
+        )}
       </div>
     </div>
   );

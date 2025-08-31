@@ -1,17 +1,20 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 
 const Layout = ({ searchQuery, setSearchQuery }) => {
+  const location = useLocation();
+  const isHome = location.pathname === "/"; // show Sidebar only on Home
+
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white">
-      {/* Sidebar */}
-      <Sidebar />
+      {/* Sidebar only on Home */}
+      {isHome && <Sidebar />}
 
-      {/* Main content area */}
+      {/* Main content */}
       <div className="flex flex-col flex-1">
-        {/* Navbar */}
+        {/* Navbar always visible */}
         <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 
         {/* Page content */}
