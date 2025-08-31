@@ -1,0 +1,107 @@
+// schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String     @id @default(cuid())
+  name           String
+  username       String     @unique
+  email          String     @unique
+  password       String?    // null if logged in via Google
+  profileImage   String?
+  bio            String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  // OTP Verification
+  emailVerified  Boolean    @default(false)
+  otp            String?    // stores the OTP
+  otpExpiry      DateTime?  // OTP expiration time
+
+  posts          Post[]     @relation("UserPosts")
+  comments       Comment[]
+  likes          Like[]
+  views          View[]
+  followers      Follow[]   @relation("FolloweeFollows")
+  following      Follow[]   @relation("FollowerFollows")
+  notifications  Notification[]
+}
+
+
+model Post {
+  id          String     @id @default(cuid())
+  title       String
+  content     String
+  image       String?
+  tags        String[]   // optional tags (array of strings)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  authorId    String
+  author      User       @relation("UserPosts", fields: [authorId], references: [id])
+  comments    Comment[]
+  likes       Like[]
+  views       View[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+
+  userId    String
+  postId    String
+
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId]) // user can like a post only once
+}
+
+model View {
+  id        String   @id @default(cuid())
+  userId    String?
+  postId    String
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+}
+
+model Follow {
+  id           String   @id @default(cuid())
+  followerId   String
+  followeeId   String
+  createdAt    DateTime @default(now())
+
+  follower     User     @relation("FollowerFollows", fields: [followerId], references: [id])
+  followee     User     @relation("FolloweeFollows", fields: [followeeId], references: [id])
+
+  @@unique([followerId, followeeId]) // prevent duplicate follows
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   // like, comment, follow
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
