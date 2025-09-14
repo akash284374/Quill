@@ -11,10 +11,10 @@ const Feed = () => {
     const fetchPosts = async () => {
       try {
         const res = await fetch("http://localhost:5000/api/posts", {
-          credentials: "include", // for cookie-based auth
+          credentials: "include", // cookie-based auth
         });
         const data = await res.json();
-        if (res.ok) setPosts(data.posts.reverse()); // show latest first
+        if (res.ok) setPosts(data.posts.reverse()); // latest first
         else console.error(data.message);
       } catch (err) {
         console.error(err);
@@ -26,7 +26,7 @@ const Feed = () => {
 
   return (
     <div className="w-full min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-white transition-colors duration-300 px-4 md:px-6 py-8 flex flex-col lg:flex-row gap-6">
-      
+
       {/* Feed List */}
       <div className="flex-1 space-y-6">
         {posts.length > 0 ? (
@@ -68,6 +68,18 @@ const Feed = () => {
                   </span>
                 ))}
               </div>
+
+              {/* Cover Image */}
+              {post.image && (
+                <div className="mb-4">
+                  <img
+                    src={post.image} // use "image" field from DB
+                    alt="cover"
+                    className="w-full max-h-64 object-cover rounded-xl"
+                  />
+                </div>
+              )}
+
 
               {/* Content */}
               <p className="text-gray-700 dark:text-gray-300 mb-4">
