@@ -242,6 +242,28 @@ export const updateCoverImage = async (req, res) => {
   }
 };
 
+
+export const updateBio = async (req, res) => {
+  try {
+    const { bio } = req.body;
+    if (!bio) return res.status(400).json({ message: "Bio is required." });
+
+    const token = req.cookies.token;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await prisma.user.update({
+      where: { id: decoded.userId },
+      data: { bio },
+    });
+
+    return res.status(200).json({ message: "Bio updated successfully", user: sanitizeUser(user) });
+  } catch (err) {
+    console.error("updateBio error:", err);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
 // ---------------- LOGOUT ----------------
 export const logoutUser = (req, res) => {
   try {

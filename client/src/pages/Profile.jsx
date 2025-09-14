@@ -11,6 +11,7 @@ const Profile = () => {
   const [coverFile, setCoverFile] = useState(null);
   const [profilePreview, setProfilePreview] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
+  const [bio, setBio] = useState(user?.bio || ""); // ✅ new state for bio
 
   useEffect(() => {
     return () => {
@@ -18,6 +19,10 @@ const Profile = () => {
       coverPreview && URL.revokeObjectURL(coverPreview);
     };
   }, [profilePreview, coverPreview]);
+
+  useEffect(() => {
+    setBio(user?.bio || "");
+  }, [user]);
 
   if (loading) {
     return (
@@ -83,6 +88,22 @@ const Profile = () => {
         updatedUser.coverImage = data.user.coverImage || null;
         setCoverFile(null);
         setCoverPreview(null);
+      }
+
+      // Update bio
+      if (bio !== user.bio) {
+        const res = await fetch(
+          "http://localhost:5000/api/auth/update-bio",
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ bio }),
+            credentials: "include",
+          }
+        );
+        if (!res.ok) throw new Error("Failed to update bio");
+        const data = await res.json();
+        updatedUser.bio = data.user.bio || "";
       }
 
       setUser(updatedUser);
@@ -190,6 +211,17 @@ const Profile = () => {
                 accept="image/*"
                 onChange={(e) => handleFileChange(e, "cover")}
                 className="mt-1 block w-full text-sm text-gray-500"
+              />
+            </label>
+
+            <label className="block mb-3">
+              <span className="text-sm font-medium">Bio</span>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={3}
+                className="mt-1 block w-full p-2 border rounded-md text-sm dark:bg-gray-800 dark:text-white"
+                placeholder="Write something about yourself..."
               />
             </label>
 

@@ -15,40 +15,40 @@ model User {
   email          String     @unique
   password       String?    // null if logged in via Google
   profileImage   String?
-  coverImage     String?    // ✅ Add this field
+  coverImage     String?
   bio            String?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
   // OTP Verification
   emailVerified  Boolean    @default(false)
-  otp            String?    // stores the OTP
-  otpExpiry      DateTime?  // OTP expiration time
+  otp            String?
+  otpExpiry      DateTime?
 
   posts          Post[]     @relation("UserPosts")
   comments       Comment[]
   likes          Like[]
+  bookmarks      Bookmark[]
   views          View[]
   followers      Follow[]   @relation("FolloweeFollows")
   following      Follow[]   @relation("FollowerFollows")
   notifications  Notification[]
 }
 
-
-
 model Post {
-  id          String     @id @default(cuid())
+  id          String      @id @default(cuid())
   title       String
   content     String
   image       String?
-  tags        String[]   // optional tags (array of strings)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  tags        String[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   authorId    String
-  author      User       @relation("UserPosts", fields: [authorId], references: [id])
+  author      User        @relation("UserPosts", fields: [authorId], references: [id])
   comments    Comment[]
   likes       Like[]
+  bookmarks   Bookmark[]
   views       View[]
 }
 
@@ -72,7 +72,19 @@ model Like {
   user      User     @relation(fields: [userId], references: [id])
   post      Post     @relation(fields: [postId], references: [id])
 
-  @@unique([userId, postId]) // user can like a post only once
+  @@unique([userId, postId])
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId]) // user can bookmark a post only once
 }
 
 model View {
@@ -94,12 +106,12 @@ model Follow {
   follower     User     @relation("FollowerFollows", fields: [followerId], references: [id])
   followee     User     @relation("FolloweeFollows", fields: [followeeId], references: [id])
 
-  @@unique([followerId, followeeId]) // prevent duplicate follows
+  @@unique([followerId, followeeId])
 }
 
 model Notification {
   id        String   @id @default(cuid())
-  type      String   // like, comment, follow
+  type      String   // like, comment, follow, bookmark
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())

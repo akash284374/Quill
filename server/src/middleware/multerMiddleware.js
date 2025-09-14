@@ -24,7 +24,9 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
 });
 
+// Named exports for different image types
 export const uploadProfileImage = upload.single("profileImage");
 export const uploadCoverImage = upload.single("coverImage");
+export const uploadFlowImage = upload.single("flowImage"); // ✅ added export for flow images
 
 export default upload;
