@@ -5,19 +5,28 @@ import {
   logoutUser,
   googleLogin,
   verifyOtp,
-  getMe, // ✅ new controller
+  getMe,
+  updateProfileImage,
+  updateCoverImage,
 } from "../controllers/authController.js";
-import { protect } from "../middleware/authMiddleware.js"; // ✅ middleware to check token
+
+import { protect } from "../middleware/authMiddleware.js";
+import { uploadProfileImage, uploadCoverImage } from "../middleware/multerMiddleware.js";
 
 const router = express.Router();
 
+// 🔑 Auth routes
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);
 router.post("/google-login", googleLogin);
 router.post("/verify-otp", verifyOtp);
 
-// ✅ new route to check logged-in user
+// 🔑 User session
 router.get("/me", protect, getMe);
+
+// 🔑 Profile & Cover image upload
+router.put("/update-profile-image", protect, uploadProfileImage, updateProfileImage);
+router.put("/update-cover-image", protect, uploadCoverImage, updateCoverImage);
 
 export default router;

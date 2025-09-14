@@ -15,6 +15,7 @@ model User {
   email          String     @unique
   password       String?    // null if logged in via Google
   profileImage   String?
+  coverImage     String?    // ✅ Add this field
   bio            String?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
@@ -32,6 +33,7 @@ model User {
   following      Follow[]   @relation("FollowerFollows")
   notifications  Notification[]
 }
+
 
 
 model Post {

@@ -3,7 +3,7 @@ import prisma from "../../prisma/index.js";
 
 export const protect = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies?.token;
 
     if (!token) {
       return res.status(401).json({ message: "Not authorized, no token" });
@@ -12,9 +12,20 @@ export const protect = async (req, res, next) => {
     // ✅ Verify JWT
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    if (!decoded?.userId) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
     // ✅ Fetch user from DB (exclude sensitive fields)
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        username: true,
+        profileImage: true,
+      },
     });
 
     if (!user) {
@@ -22,10 +33,10 @@ export const protect = async (req, res, next) => {
     }
 
     // ✅ Attach user to request
-    req.user = { id: user.id, email: user.email, username: user.username, name: user.name };
+    req.user = user;
     next();
   } catch (err) {
-    console.error("Auth Middleware Error:", err);
+    console.error("Auth Middleware Error:", err.message);
     return res.status(401).json({ message: "Not authorized, token failed" });
   }
 };

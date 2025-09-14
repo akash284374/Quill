@@ -86,6 +86,48 @@ export const logout = async () => {
   }
 };
 
+// ✅ Update Profile Picture
+export const updateProfileImage = async (formData) => {
+  try {
+    const res = await api.put("/auth/update-profile-image", formData, {
+      withCredentials: true,
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return {
+      success: true,
+      message: res?.data?.message || "Profile picture updated",
+      user: res?.data?.user || null,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || "Profile update failed",
+      user: null,
+    };
+  }
+};
+
+// ✅ Update Cover Picture
+export const updateCoverImage = async (formData) => {
+  try {
+    const res = await api.put("/auth/update-cover-image", formData, {
+      withCredentials: true,
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return {
+      success: true,
+      message: res?.data?.message || "Cover picture updated",
+      user: res?.data?.user || null,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || "Cover update failed",
+      user: null,
+    };
+  }
+};
+
 // Export all services
 const authServices = {
   verifyOtp,
@@ -93,6 +135,8 @@ const authServices = {
   login,
   checkAuth,
   logout,
+  updateProfileImage,
+  updateCoverImage,
 };
 
 export default authServices;

@@ -20,44 +20,44 @@ const Register = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    // Frontend validation: check passwords match
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
+  // Frontend validation
+  if (formData.password !== formData.confirmPassword) {
+    toast.error("Passwords do not match");
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    // ✅ Send only required fields
+    const res = await register({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+    });
+
+    if (res.success) {
+      toast.success("OTP sent to your email. Please verify!");
+
+      // Store email in sessionStorage in case of reload
+      sessionStorage.setItem("otpEmail", formData.email);
+
+      // Navigate to Verify OTP page
+      navigate("/verify-otp", { state: { email: formData.email } });
+    } else {
+      toast.error(res.message || "Registration failed");
     }
+  } catch (err) {
+    console.error(err);
+    toast.error("Something went wrong. Try again!");
+  } finally {
+    setLoading(false);
+  }
+};
 
-    try {
-      setLoading(true);
-
-      // Call backend register API WITHOUT confirmPassword
-      const res = await register({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        confirmPassword
-      });
-
-      if (res.success) {
-        toast.success("OTP sent to your email. Please verify!");
-
-        // Store email in sessionStorage in case of page reload
-        sessionStorage.setItem("otpEmail", formData.email);
-
-        // Navigate to Verify OTP page
-        navigate("/verify-otp", { state: { email: formData.email } });
-      } else {
-        toast.error(res.message || "Registration failed");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong. Try again!");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-800">

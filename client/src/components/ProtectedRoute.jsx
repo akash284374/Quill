@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
-  // ✅ Show full-screen loader while checking auth
+  // Show loader while checking auth
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen text-gray-600 dark:text-gray-300">
@@ -14,12 +14,11 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  // ✅ Redirect to login if not authenticated
+  // Redirect only if not authenticated after loading is complete
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // ✅ Render protected content
   return children;
 };
 

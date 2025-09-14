@@ -20,7 +20,7 @@ const Login = () => {
 
       if (res.success) {
         toast.success(res.message || "Login successful!");
-        navigate("/dashboard", { replace: true }); // ✅ replace avoids back nav to login
+        navigate("/", { replace: true }); // ✅ replace avoids back nav to login
       } else {
         toast.error(res.message || "Login failed");
       }
