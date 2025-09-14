@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FaBookmark } from "react-icons/fa";
+import { FaBookmark, FaHeart } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
 const Feed = () => {
@@ -7,22 +7,83 @@ const Feed = () => {
   const [posts, setPosts] = useState([]);
 
   // Fetch posts from backend
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const res = await fetch("http://localhost:5000/api/posts", {
-          credentials: "include", // cookie-based auth
-        });
-        const data = await res.json();
-        if (res.ok) setPosts(data.posts.reverse()); // latest first
-        else console.error(data.message);
-      } catch (err) {
-        console.error(err);
-      }
-    };
+  const fetchPosts = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/posts", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok) setPosts(data.posts.reverse());
+      else console.error(data.message);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
+  useEffect(() => {
     fetchPosts();
   }, []);
+
+  // Add view when post is loaded
+  useEffect(() => {
+    posts.forEach((post) => {
+      fetch("http://localhost:5000/api/posts/view", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ postId: post.id }),
+      }).catch(console.error);
+    });
+  }, [posts]);
+
+  // Handle like toggle
+  const handleLike = async (postId) => {
+    try {
+      const res = await fetch("http://localhost:5000/api/posts/like", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ postId }),
+      });
+      const data = await res.json();
+      if (res.ok) fetchPosts();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Handle bookmark toggle
+  const handleBookmark = async (postId) => {
+    try {
+      const res = await fetch("http://localhost:5000/api/posts/bookmark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ postId }),
+      });
+      const data = await res.json();
+      if (res.ok) fetchPosts();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Handle adding comment
+  const handleAddComment = async (postId, text) => {
+    if (!text.trim()) return;
+    try {
+      const res = await fetch("http://localhost:5000/api/posts/comment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ postId, text }),
+      });
+      const data = await res.json();
+      if (res.ok) fetchPosts();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div className="w-full min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-white transition-colors duration-300 px-4 md:px-6 py-8 flex flex-col lg:flex-row gap-6">
@@ -73,21 +134,18 @@ const Feed = () => {
               {post.image && (
                 <div className="mb-4">
                   <img
-                    src={post.image} // use "image" field from DB
+                    src={post.image}
                     alt="cover"
                     className="w-full max-h-64 object-cover rounded-xl"
                   />
                 </div>
               )}
 
-
               {/* Content */}
-              <p className="text-gray-700 dark:text-gray-300 mb-4">
-                {post.content}
-              </p>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">{post.content}</p>
 
               {/* Footer */}
-              <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-2">
                 <span>{post.comments?.length || 0} Discuss</span>
                 <span>•</span>
                 <span>{post.likes?.length || 0} Likes</span>
@@ -95,12 +153,76 @@ const Feed = () => {
                 <span>{post.views?.length || 0} Reads</span>
               </div>
 
-              {/* Bookmark Icon */}
+              {/* Action Buttons */}
               {user && (
-                <div className="absolute top-6 right-6 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white cursor-pointer">
-                  <FaBookmark />
+                <div className="flex items-center gap-4 mb-2">
+                  <button
+                    onClick={() => handleLike(post.id)}
+                    className={`flex items-center gap-1 ${
+                      post.likes.some((l) => l.userId === user.id)
+                        ? "text-red-500"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    <FaHeart /> Like
+                  </button>
+                  <button
+                    onClick={() => handleBookmark(post.id)}
+                    className={`flex items-center gap-1 ${
+                      post.bookmarks.some((b) => b.userId === user.id)
+                        ? "text-green-500"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    <FaBookmark /> Bookmark
+                  </button>
                 </div>
               )}
+
+              {/* Comments */}
+              <div className="mt-2 space-y-2">
+                {post.comments?.map((c) => (
+                  <div key={c.id} className="flex items-start gap-2">
+                    {c.user.profileImage ? (
+                      <img
+                        src={c.user.profileImage}
+                        className="w-6 h-6 rounded-full object-cover"
+                        alt="avatar"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-gray-700 text-white flex items-center justify-center text-xs">
+                        {c.user.username[0]}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold">{c.user.username}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{c.text}</p>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Add Comment Input */}
+                {user && (
+                  <input
+                    type="text"
+                    placeholder="Add a comment..."
+                    className="w-full p-2 border border-gray-300 rounded-lg dark:bg-gray-800 dark:text-white mt-2"
+                    value={post.newComment || ""}
+                    onChange={(e) =>
+                      setPosts((prev) =>
+                        prev.map((p) =>
+                          p.id === post.id ? { ...p, newComment: e.target.value } : p
+                        )
+                      )
+                    }
+                    onKeyDown={async (e) => {
+                      if (e.key === "Enter" && post.newComment?.trim()) {
+                        await handleAddComment(post.id, post.newComment);
+                      }
+                    }}
+                  />
+                )}
+              </div>
             </div>
           ))
         ) : (
