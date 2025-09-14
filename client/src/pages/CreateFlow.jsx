@@ -2,6 +2,10 @@ import React, { useState } from "react";
 
 const CreateFlow = () => {
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [content, setContent] = useState("");
+  const [coverImageFile, setCoverImageFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
 
   const handleCreate = () => {
@@ -10,10 +14,56 @@ const CreateFlow = () => {
     }
   };
 
+  const handleCoverUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setCoverImageFile(file);
+      setCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!title.trim() || !content.trim()) {
+      alert("Title and content are required!");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("content", content);
+      formData.append("tags", "flow"); // you can customize tags
+      formData.append("description", description);
+      // if (coverImageFile) formData.append("file", coverImageFile);
+      if (coverImageFile) formData.append("flowImage", coverImageFile);
+
+
+      const res = await fetch("http://localhost:5000/api/posts/create", {
+        method: "POST",
+        body: formData,
+        credentials: "include", // include cookies for auth if needed
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Flow posted successfully!");
+        setTitle("");
+        setDescription("");
+        setContent("");
+        setCoverImageFile(null);
+        setCoverPreview(null);
+        setShowEditor(false);
+      } else {
+        alert(data.message || "Failed to post flow");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong!");
+    }
+  };
+
   return (
     <div className="flex min-h-screen dark:bg-[#0f0f0f] text-white">
-      {/* Sidebar here if needed */}
-
       <div className="flex-1 p-6">
         {!showEditor ? (
           // Step 1: Title Entry Modal
@@ -49,22 +99,53 @@ const CreateFlow = () => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-green-500">Saved!</span>
               <div className="flex gap-3">
-                <button className="bg-black text-white px-4 py-2 rounded border border-white hover:bg-white hover:text-black">
+                <button
+                  onClick={handlePublish}
+                  className="bg-black text-white px-4 py-2 rounded border border-white hover:bg-white hover:text-black"
+                >
                   Publish
                 </button>
-                <button className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
+                <button
+                  onClick={() => {
+                    setShowEditor(false);
+                    setTitle("");
+                    setDescription("");
+                    setContent("");
+                    setCoverImageFile(null);
+                    setCoverPreview(null);
+                  }}
+                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                >
                   Delete
                 </button>
               </div>
             </div>
 
             {/* Cover Image */}
-            <div className="bg-[#2a2f3a] h-60 rounded-xl flex items-center justify-center relative">
-              <span className="text-gray-300 text-lg">Upload file</span>
-              <button className="absolute right-4 bottom-4 bg-gray-200 text-black px-3 py-1 rounded hover:bg-white">
-                Upload file
-              </button>
-            </div>
+          {/* Cover Image */}
+<div className="bg-[#2a2f3a] h-60 rounded-xl flex items-center justify-center relative overflow-hidden">
+  {coverPreview ? (
+    <img
+      src={coverPreview}
+      alt="cover preview"
+      className="w-full h-full object-cover rounded-xl"
+    />
+  ) : (
+    <span className="text-gray-300 text-lg">Upload file</span>
+  )}
+
+  {/* Upload Button */}
+  <label className="absolute right-4 bottom-4 bg-gray-200 text-black px-3 py-1 rounded hover:bg-white cursor-pointer">
+    Upload file
+    <input
+      type="file"
+      accept="image/*"
+      onChange={handleCoverUpload}
+      className="hidden" // hide the real input, label acts as button
+    />
+  </label>
+</div>
+
 
             {/* Title */}
             <h1 className="text-4xl font-bold">{title}</h1>
@@ -72,6 +153,8 @@ const CreateFlow = () => {
             {/* Description */}
             <input
               type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="Enter the description here!!!"
               className="w-full text-lg italic bg-transparent text-gray-400 focus:outline-none"
             />
@@ -80,6 +163,8 @@ const CreateFlow = () => {
 
             {/* Content */}
             <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
               placeholder="Write with your flow!!!"
               rows={6}
               className="w-full bg-transparent text-white resize-none focus:outline-none"

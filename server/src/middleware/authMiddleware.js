@@ -9,16 +9,24 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ message: "Not authorized, no token" });
     }
 
-    // ✅ Verify JWT
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    if (!decoded?.userId) {
+    // Verify JWT
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      console.error("Auth Middleware JWT verify error:", err.message);
       return res.status(401).json({ message: "Invalid token" });
     }
 
-    // ✅ Fetch user from DB (exclude sensitive fields)
+    // Adjust to match how token was signed
+    const userId = decoded.id || decoded.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Invalid token payload" });
+    }
+
+    // Fetch user from DB (exclude sensitive fields)
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
+      where: { id: userId },
       select: {
         id: true,
         name: true,
@@ -32,7 +40,6 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ message: "Not authorized, user not found" });
     }
 
-    // ✅ Attach user to request
     req.user = user;
     next();
   } catch (err) {
