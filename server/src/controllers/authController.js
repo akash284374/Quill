@@ -1,8 +1,9 @@
+// src/controllers/authController.js
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import prisma from "../../prisma/index.js";
 import { sendVerificationEmail } from "../utils/sendEmail.js";
-import { uploadOnCloudinary } from "../config/cloudinary.js"; // import Cloudinary upload helper
+import { uploadOnCloudinary } from "../config/cloudinary.js";
 
 // ---------------- HELPER ----------------
 const sanitizeUser = (user) => {
@@ -15,7 +16,6 @@ const sanitizeUser = (user) => {
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password, username } = req.body;
-
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required." });
     }
@@ -50,7 +50,6 @@ export const registerUser = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 // ---------------- VERIFY OTP ----------------
 export const verifyOtp = async (req, res) => {
@@ -92,7 +91,7 @@ export const loginUser = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "None",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -126,7 +125,7 @@ export const googleLogin = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -138,52 +137,14 @@ export const googleLogin = async (req, res) => {
 };
 
 // ---------------- GET LOGGED IN USER ----------------
-// export const getMe = async (req, res) => {
-//   try {
-//     const user = await prisma.user.findUnique({
-//       where: { id: req.user.id },
-//       include: {
-//         posts: true,
-//         followers: { select: { follower: { select: { id: true, username: true, profileImage: true } } } },
-//         following: { select: { followee: { select: { id: true, username: true, profileImage: true } } } },
-//       },
-//     });
-
-//     if (!user) return res.status(404).json({ message: "User not found" });
-
-//     const followersIds = user.followers.map((f) => f.follower.id);
-//     const followingIds = user.following.map((f) => f.followee.id);
-//     const friendIds = followersIds.filter((id) => followingIds.includes(id));
-
-//     const friends = user.followers
-//       .filter((f) => friendIds.includes(f.follower.id))
-//       .map((f) => f.follower);
-
-//     return res.status(200).json({
-//       ...sanitizeUser(user),
-//       followers: user.followers.map((f) => f.follower),
-//       following: user.following.map((f) => f.followee),
-//       friends,
-//     });
-//   } catch (err) {
-//     console.error("getMe error:", err);
-//     return res.status(500).json({ message: "Internal Server Error" });
-//   }
-// };
-
 export const getMe = async (req, res) => {
   try {
     const token = req.cookies.token;
     if (!token) return res.status(401).json({ message: "Not authenticated" });
 
-    // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Find user
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-    });
-
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
     if (!user) return res.status(404).json({ message: "User not found" });
 
     return res.status(200).json({ user: sanitizeUser(user) });
@@ -193,13 +154,11 @@ export const getMe = async (req, res) => {
   }
 };
 
-
 // ---------------- UPDATE PROFILE IMAGE ----------------
 export const updateProfileImage = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "Profile image is required." });
 
-    // Upload to Cloudinary
     const profileImageUrl = await uploadOnCloudinary(req.file.path);
     if (!profileImageUrl) return res.status(500).json({ message: "Failed to upload image to Cloudinary" });
 
@@ -208,10 +167,7 @@ export const updateProfileImage = async (req, res) => {
       data: { profileImage: profileImageUrl },
     });
 
-    return res.status(200).json({
-      message: "Profile image updated successfully",
-      user: sanitizeUser(user),
-    });
+    return res.status(200).json({ message: "Profile image updated successfully", user: sanitizeUser(user) });
   } catch (err) {
     console.error("updateProfileImage error:", err);
     return res.status(500).json({ message: "Internal Server Error" });
@@ -223,7 +179,6 @@ export const updateCoverImage = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "Cover image is required." });
 
-    // Upload to Cloudinary
     const coverImageUrl = await uploadOnCloudinary(req.file.path);
     if (!coverImageUrl) return res.status(500).json({ message: "Failed to upload image to Cloudinary" });
 
@@ -232,17 +187,14 @@ export const updateCoverImage = async (req, res) => {
       data: { coverImage: coverImageUrl },
     });
 
-    return res.status(200).json({
-      message: "Cover image updated successfully",
-      user: sanitizeUser(user),
-    });
+    return res.status(200).json({ message: "Cover image updated successfully", user: sanitizeUser(user) });
   } catch (err) {
     console.error("updateCoverImage error:", err);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-
+// ---------------- UPDATE BIO ----------------
 export const updateBio = async (req, res) => {
   try {
     const { bio } = req.body;
@@ -263,14 +215,13 @@ export const updateBio = async (req, res) => {
   }
 };
 
-
 // ---------------- LOGOUT ----------------
 export const logoutUser = (req, res) => {
   try {
     res.clearCookie("token", {
       httpOnly: true,
-      sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     });
     return res.status(200).json({ message: "Logout successful." });
   } catch (err) {

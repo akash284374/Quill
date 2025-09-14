@@ -10,25 +10,18 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Load user from localStorage first
-        const savedUser = localStorage.getItem("user");
-        if (savedUser) setUser(JSON.parse(savedUser));
-
-        // Validate session with backend
+        // Validate session with backend using cookie
         const data = await authServices.checkAuth();
         if (data.success && data.user) {
-          setUser(data.user);
-          localStorage.setItem("user", JSON.stringify(data.user));
+          setUser(data.user); // user is logged in
         } else {
-          setUser(null);
-          localStorage.removeItem("user");
+          setUser(null); // user not logged in
         }
       } catch (err) {
         console.error("Auth check failed", err);
         setUser(null);
-        localStorage.removeItem("user");
       } finally {
-        setLoading(false); // important to set loading false after check
+        setLoading(false); // done checking auth
       }
     };
 
@@ -39,7 +32,6 @@ export const AuthProvider = ({ children }) => {
     const data = await authServices.login(credentials);
     if (data.success && data.user) {
       setUser(data.user);
-      localStorage.setItem("user", JSON.stringify(data.user));
     }
     return data;
   };
@@ -48,7 +40,6 @@ export const AuthProvider = ({ children }) => {
     const data = await authServices.register(userData);
     if (data.success && data.user) {
       setUser(data.user);
-      localStorage.setItem("user", JSON.stringify(data.user));
     }
     return data;
   };
@@ -64,7 +55,6 @@ export const AuthProvider = ({ children }) => {
       console.error("Logout failed", err);
     } finally {
       setUser(null);
-      localStorage.removeItem("user");
     }
   };
 
