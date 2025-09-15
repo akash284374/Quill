@@ -4,9 +4,10 @@ import {
   followUser,
   unfollowUser,
   getFollowers,
-  getFollowing
+  getFollowing,
+  removeFriend,   // ✅ import new controller
 } from "../controllers/followController.js";
-import { protect } from "../middleware/authMiddleware.js"; // ✅ Updated middleware name
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -14,6 +15,7 @@ const router = express.Router();
 router.get("/suggestions", protect, getFriendsSuggestions);
 router.post("/follow", protect, followUser);
 router.post("/unfollow", protect, unfollowUser);
+router.post("/remove-friend", protect, removeFriend); // ✅ new route
 router.get("/followers/:userId", protect, getFollowers);
 router.get("/following/:userId", protect, getFollowing);
 

@@ -87,6 +87,34 @@ export const getPostById = async (req, res) => {
   }
 };
 
+// ---------------- GET POSTS BY USER ----------------
+export const getPostsByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const posts = await prisma.post.findMany({
+      where: { authorId: userId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        author: { select: { id: true, username: true, profileImage: true } },
+        likes: true,
+        bookmarks: true,
+        comments: {
+          include: { user: { select: { id: true, username: true, profileImage: true } } },
+        },
+        views: true,
+      },
+    });
+
+    if (!posts.length) return res.status(404).json({ message: "No posts found for this user" });
+
+    res.status(200).json({ posts });
+  } catch (err) {
+    console.error("getPostsByUser error:", err);
+    res.status(500).json({ message: "Failed to fetch user's posts" });
+  }
+};
+
 // ---------------- ADD COMMENT ----------------
 export const addComment = async (req, res) => {
   try {
@@ -172,13 +200,12 @@ export const addView = async (req, res) => {
   }
 };
 
-// Ensure Read (count unique read once per user)
+// ---------------- ENSURE READ ----------------
 export const ensureRead = async (req, res) => {
   try {
     const { postId } = req.body;
     const userId = req.user.id;
 
-    // Check if user already read this post
     const existingRead = await prisma.read.findFirst({
       where: { postId, userId },
     });
@@ -187,12 +214,10 @@ export const ensureRead = async (req, res) => {
       return res.status(200).json({ message: "Already counted", alreadyRead: true });
     }
 
-    // Create new read record
     await prisma.read.create({
       data: { postId, userId },
     });
 
-    // Increment read count only once
     await prisma.post.update({
       where: { id: postId },
       data: { reads: { increment: 1 } },
@@ -200,7 +225,7 @@ export const ensureRead = async (req, res) => {
 
     res.status(200).json({ message: "Read counted", alreadyRead: false });
   } catch (err) {
-    console.error("Error in ensureRead:", err);
+    console.error("ensureRead error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

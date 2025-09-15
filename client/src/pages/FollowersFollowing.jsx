@@ -15,8 +15,12 @@ const FollowersFollowingPage = () => {
     try {
       setLoading(true);
       const [followersRes, followingRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/follow/followers/me", { withCredentials: true }),
-        axios.get("http://localhost:5000/api/follow/following/me", { withCredentials: true }),
+        axios.get("http://localhost:5000/api/follow/followers/me", {
+          withCredentials: true,
+        }),
+        axios.get("http://localhost:5000/api/follow/following/me", {
+          withCredentials: true,
+        }),
       ]);
 
       setFollowers(followersRes.data.followers || []);
@@ -42,10 +46,28 @@ const FollowersFollowingPage = () => {
         { followeeId: userId },
         { withCredentials: true }
       );
-      setFollowing((prev) => prev.filter((u) => u.id !== userId));
+      setFollowing((prev) => prev.filter((u) => (u._id || u.id) !== userId));
     } catch (err) {
       console.error("Error unfollowing user:", err);
       alert(err.response?.data?.message || "Failed to unfollow user.");
+    } finally {
+      setUnfollowLoading((prev) => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  // Handle remove follower
+  const handleRemoveFollower = async (userId) => {
+    try {
+      setUnfollowLoading((prev) => ({ ...prev, [userId]: true }));
+      await axios.post(
+        "http://localhost:5000/api/follow/remove",
+        { followerId: userId },
+        { withCredentials: true }
+      );
+      setFollowers((prev) => prev.filter((u) => (u._id || u.id) !== userId));
+    } catch (err) {
+      console.error("Error removing follower:", err);
+      alert(err.response?.data?.message || "Failed to remove follower.");
     } finally {
       setUnfollowLoading((prev) => ({ ...prev, [userId]: false }));
     }
@@ -56,7 +78,8 @@ const FollowersFollowingPage = () => {
     setFollowing((prev) => [...prev, followData.followee]);
   };
 
-  if (loading) return <p className="p-6 text-gray-500">Loading followers/following...</p>;
+  if (loading)
+    return <p className="p-6 text-gray-500">Loading followers/following...</p>;
   if (error) return <p className="p-6 text-red-500">{error}</p>;
 
   return (
@@ -70,24 +93,40 @@ const FollowersFollowingPage = () => {
         <p className="text-gray-500">You have no followers yet.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {followers.map((f) => (
-            <div
-              key={f.id}
-              className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow border border-gray-200 dark:border-gray-700 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-4">
-                <img
-                  src={f.profileImage || `https://i.pravatar.cc/150?u=${f.id}`}
-                  alt={f.name}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div>
-                  <h3 className="font-bold">{f.name}</h3>
-                  <p className="text-sm text-gray-500">{f.username}</p>
+          {followers.map((f) => {
+            const uid = f._id || f.id; // ✅ fix here
+            return (
+              <div
+                key={uid}
+                className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow border border-gray-200 dark:border-gray-700 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-4">
+                  <img
+                    src={f.profileImage || `https://i.pravatar.cc/150?u=${uid}`}
+                    alt={f.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div>
+                    <h3 className="font-bold">{f.name}</h3>
+                    <p className="text-sm text-gray-500">{f.username}</p>
+                  </div>
                 </div>
+                <button
+                  disabled={unfollowLoading[uid]}
+                  onClick={() => handleRemoveFollower(uid)}
+                  className="py-1 px-3 rounded-xl flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition"
+                >
+                  {unfollowLoading[uid] ? (
+                    "Processing..."
+                  ) : (
+                    <>
+                      <FiUserX /> Remove
+                    </>
+                  )}
+                </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -97,31 +136,40 @@ const FollowersFollowingPage = () => {
         <p className="text-gray-500">You are not following anyone yet.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {following.map((f) => (
-            <div
-              key={f.id}
-              className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow border border-gray-200 dark:border-gray-700 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-4">
-                <img
-                  src={f.profileImage || `https://i.pravatar.cc/150?u=${f.id}`}
-                  alt={f.name}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-                <div>
-                  <h3 className="font-bold">{f.name}</h3>
-                  <p className="text-sm text-gray-500">{f.username}</p>
-                </div>
-              </div>
-              <button
-                disabled={unfollowLoading[f.id]}
-                onClick={() => handleUnfollow(f.id)}
-                className="py-1 px-3 rounded-xl flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition"
+          {following.map((f) => {
+            const uid = f._id || f.id; // ✅ fix here
+            return (
+              <div
+                key={uid}
+                className="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow border border-gray-200 dark:border-gray-700 flex items-center justify-between"
               >
-                {unfollowLoading[f.id] ? "Processing..." : <><FiUserX /> Unfollow</>}
-              </button>
-            </div>
-          ))}
+                <div className="flex items-center gap-4">
+                  <img
+                    src={f.profileImage || `https://i.pravatar.cc/150?u=${uid}`}
+                    alt={f.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div>
+                    <h3 className="font-bold">{f.name}</h3>
+                    <p className="text-sm text-gray-500">{f.username}</p>
+                  </div>
+                </div>
+                <button
+                  disabled={unfollowLoading[uid]}
+                  onClick={() => handleUnfollow(uid)}
+                  className="py-1 px-3 rounded-xl flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white transition"
+                >
+                  {unfollowLoading[uid] ? (
+                    "Processing..."
+                  ) : (
+                    <>
+                      <FiUserX /> Unfollow
+                    </>
+                  )}
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

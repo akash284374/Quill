@@ -3,6 +3,7 @@ import {
   createPost,
   getAllPosts,
   getPostById,
+  getPostsByUser, // ✅ import new controller
   addComment,
   toggleLike,
   toggleBookmark,
@@ -23,6 +24,9 @@ router.get("/", getAllPosts);
 
 // Fetch single post / flow by ID
 router.get("/:id", getPostById);
+
+// Fetch all posts of a specific user ✅
+router.get("/user/:userId", getPostsByUser);
 
 // ---------------- INTERACTIONS ----------------
 

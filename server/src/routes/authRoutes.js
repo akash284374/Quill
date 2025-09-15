@@ -6,9 +6,10 @@ import {
   googleLogin,
   verifyOtp,
   getMe,
+  getUserProfile,   // ✅ new controller
   updateProfileImage,
   updateCoverImage,
-  updateBio, // ✅ import the bio controller
+  updateBio,
 } from "../controllers/authController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -26,11 +27,14 @@ router.post("/verify-otp", verifyOtp);
 // User session
 router.get("/me", protect, getMe);
 
+// Public profile (view another user)
+router.get("/profile/:userId", protect, getUserProfile); // ✅ added
+
 // Profile & Cover image upload
 router.put("/update-profile-image", protect, uploadProfileImage, updateProfileImage);
 router.put("/update-cover-image", protect, uploadCoverImage, updateCoverImage);
 
-// ✅ Update bio route
+// Bio update
 router.put("/update-bio", protect, updateBio);
 
 export default router;

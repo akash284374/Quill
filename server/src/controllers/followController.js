@@ -25,7 +25,7 @@ export const getFriendsSuggestions = async (req, res) => {
 
     res.status(200).json({ suggestions });
   } catch (err) {
-    console.error(err);
+    console.error("Error in getFriendsSuggestions:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -52,7 +52,7 @@ export const followUser = async (req, res) => {
 
     res.status(201).json({ message: "Followed successfully", follow });
   } catch (err) {
-    console.error(err);
+    console.error("Error in followUser:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -70,7 +70,31 @@ export const unfollowUser = async (req, res) => {
 
     res.status(200).json({ message: "Unfollowed successfully" });
   } catch (err) {
-    console.error(err);
+    console.error("Error in unfollowUser:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Remove Friend (mutual remove)
+export const removeFriend = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { friendId } = req.body;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    // Delete both directions (if exist)
+    await prisma.follow.deleteMany({
+      where: {
+        OR: [
+          { followerId: userId, followeeId: friendId },
+          { followerId: friendId, followeeId: userId },
+        ],
+      },
+    });
+
+    res.status(200).json({ message: "Friend removed successfully" });
+  } catch (err) {
+    console.error("Error in removeFriend:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -87,7 +111,7 @@ export const getFollowers = async (req, res) => {
 
     res.status(200).json({ followers: followers.map(f => f.follower) });
   } catch (err) {
-    console.error(err);
+    console.error("Error in getFollowers:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -104,7 +128,7 @@ export const getFollowing = async (req, res) => {
 
     res.status(200).json({ following: following.map(f => f.followee) });
   } catch (err) {
-    console.error(err);
+    console.error("Error in getFollowing:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

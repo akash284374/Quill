@@ -136,7 +136,7 @@ export const googleLogin = async (req, res) => {
   }
 };
 
-// ---------------- GET LOGGED IN USER ----------------
+// ---------------- GET LOGGED-IN USER ----------------
 export const getMe = async (req, res) => {
   try {
     const token = req.cookies.token;
@@ -144,12 +144,72 @@ export const getMe = async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: {
+        followers: { include: { follower: true } },
+        following: { include: { followee: true } },
+        posts: true,
+      },
+    });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    return res.status(200).json({ user: sanitizeUser(user) });
+    // Mutual follows = friends
+    const followerIds = user.followers.map(f => f.followerId);
+    const followingIds = user.following.map(f => f.followeeId);
+    const friendIds = followerIds.filter(id => followingIds.includes(id));
+
+    const friends = await prisma.user.findMany({
+      where: { id: { in: friendIds } },
+      select: { id: true, name: true, username: true, profileImage: true },
+    });
+
+    return res.status(200).json({
+      user: sanitizeUser(user),
+      followers: user.followers.map(f => sanitizeUser(f.follower)),
+      following: user.following.map(f => sanitizeUser(f.followee)),
+      friends,
+      posts: user.posts,
+    });
   } catch (err) {
     console.error("getMe error:", err);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+// ---------------- GET ANY USER PROFILE ----------------
+export const getUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        followers: { include: { follower: true } },
+        following: { include: { followee: true } },
+        posts: true,
+      },
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const followerIds = user.followers.map(f => f.followerId);
+    const followingIds = user.following.map(f => f.followeeId);
+    const friendIds = followerIds.filter(id => followingIds.includes(id));
+
+    const friends = await prisma.user.findMany({
+      where: { id: { in: friendIds } },
+      select: { id: true, name: true, username: true, profileImage: true },
+    });
+
+    return res.status(200).json({
+      user: sanitizeUser(user),
+      followers: user.followers.map(f => sanitizeUser(f.follower)),
+      following: user.following.map(f => sanitizeUser(f.followee)),
+      friends,
+      posts: user.posts,
+    });
+  } catch (err) {
+    console.error("getUserProfile error:", err);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -198,9 +258,11 @@ export const updateCoverImage = async (req, res) => {
 export const updateBio = async (req, res) => {
   try {
     const { bio } = req.body;
-    if (!bio) return res.status(400).json({ message: "Bio is required." });
+    if (bio === undefined) return res.status(400).json({ message: "Bio is required." });
 
     const token = req.cookies.token;
+    if (!token) return res.status(401).json({ message: "Not authenticated" });
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await prisma.user.update({
