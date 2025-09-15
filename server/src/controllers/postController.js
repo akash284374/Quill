@@ -171,3 +171,36 @@ export const addView = async (req, res) => {
     res.status(500).json({ message: "Failed to add view" });
   }
 };
+
+// Ensure Read (count unique read once per user)
+export const ensureRead = async (req, res) => {
+  try {
+    const { postId } = req.body;
+    const userId = req.user.id;
+
+    // Check if user already read this post
+    const existingRead = await prisma.read.findFirst({
+      where: { postId, userId },
+    });
+
+    if (existingRead) {
+      return res.status(200).json({ message: "Already counted", alreadyRead: true });
+    }
+
+    // Create new read record
+    await prisma.read.create({
+      data: { postId, userId },
+    });
+
+    // Increment read count only once
+    await prisma.post.update({
+      where: { id: postId },
+      data: { reads: { increment: 1 } },
+    });
+
+    res.status(200).json({ message: "Read counted", alreadyRead: false });
+  } catch (err) {
+    console.error("Error in ensureRead:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

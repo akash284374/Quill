@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 const Feed = () => {
   const { user } = useAuth();
   const [posts, setPosts] = useState([]);
+  const [hasRead, setHasRead] = useState({}); // track which posts user has already read
 
   // Fetch posts from backend
   const fetchPosts = async () => {
@@ -24,17 +25,26 @@ const Feed = () => {
     fetchPosts();
   }, []);
 
-  // Add view when post is loaded
-  useEffect(() => {
-    posts.forEach((post) => {
-      fetch("http://localhost:5000/api/posts/view", {
+  // Ensure a read for a post (only once per user + per session)
+  const ensureRead = async (postId) => {
+    if (hasRead[postId]) return; // already counted in this session
+
+    try {
+      const res = await fetch("http://localhost:5000/api/posts/view", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ postId: post.id }),
-      }).catch(console.error);
-    });
-  }, [posts]);
+        body: JSON.stringify({ postId }),
+      });
+
+      if (res.ok) {
+        setHasRead((prev) => ({ ...prev, [postId]: true })); // mark as read
+        fetchPosts();
+      }
+    } catch (err) {
+      console.error("ensureRead error:", err);
+    }
+  };
 
   // Handle like toggle
   const handleLike = async (postId) => {
@@ -46,7 +56,12 @@ const Feed = () => {
         body: JSON.stringify({ postId }),
       });
       const data = await res.json();
-      if (res.ok) fetchPosts();
+      if (res.ok) {
+        await ensureRead(postId); // only first time will trigger
+        fetchPosts();
+      } else {
+        console.error(data.message);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -62,7 +77,12 @@ const Feed = () => {
         body: JSON.stringify({ postId }),
       });
       const data = await res.json();
-      if (res.ok) fetchPosts();
+      if (res.ok) {
+        await ensureRead(postId); // only first time will trigger
+        fetchPosts();
+      } else {
+        console.error(data.message);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -79,7 +99,12 @@ const Feed = () => {
         body: JSON.stringify({ postId, text }),
       });
       const data = await res.json();
-      if (res.ok) fetchPosts();
+      if (res.ok) {
+        await ensureRead(postId); // only first time will trigger
+        fetchPosts();
+      } else {
+        console.error(data.message);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -87,7 +112,6 @@ const Feed = () => {
 
   return (
     <div className="w-full min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-white transition-colors duration-300 px-4 md:px-6 py-8 flex flex-col lg:flex-row gap-6">
-
       {/* Feed List */}
       <div className="flex-1 space-y-6">
         {posts.length > 0 ? (
@@ -142,7 +166,9 @@ const Feed = () => {
               )}
 
               {/* Content */}
-              <p className="text-gray-700 dark:text-gray-300 mb-4">{post.content}</p>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">
+                {post.content}
+              </p>
 
               {/* Footer */}
               <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-2">
@@ -196,7 +222,9 @@ const Feed = () => {
                     )}
                     <div>
                       <p className="text-sm font-semibold">{c.user.username}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{c.text}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {c.text}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -211,7 +239,9 @@ const Feed = () => {
                     onChange={(e) =>
                       setPosts((prev) =>
                         prev.map((p) =>
-                          p.id === post.id ? { ...p, newComment: e.target.value } : p
+                          p.id === post.id
+                            ? { ...p, newComment: e.target.value }
+                            : p
                         )
                       )
                     }
@@ -236,7 +266,8 @@ const Feed = () => {
           <div className="mt-10 text-center">
             <h2 className="text-2xl font-bold mb-4">Join Quill Today ✨</h2>
             <p className="mb-6 text-gray-600 dark:text-gray-400">
-              Read unlimited blogs, share your thoughts, and connect with others.
+              Read unlimited blogs, share your thoughts, and connect with
+              others.
             </p>
             <div className="flex justify-center gap-4 flex-wrap">
               <a
